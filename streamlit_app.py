@@ -5,22 +5,21 @@ from sklearn.metrics.pairwise import cosine_similarity
 from sentence_transformers import SentenceTransformer
 import docx
 import PyPDF2
+import io
 
 # Initialize sentence transformer model for BERT embeddings
 model = SentenceTransformer('all-MiniLM-L6-v2')
 
 # Function to extract text from DOC file
-def extract_text_from_doc(doc_path):
-    doc = docx.Document(doc_path)
+def extract_text_from_doc(doc_file):
+    doc = docx.Document(doc_file)
     text = ' '.join([paragraph.text for paragraph in doc.paragraphs])
     return text
 
 # Function to extract text from PDF file
-def extract_text_from_pdf(pdf_path):
-    pdf_file_obj = open(pdf_path, 'rb')
-    pdf_reader = PyPDF2.PdfFileReader(pdf_file_obj)
+def extract_text_from_pdf(pdf_file):
+    pdf_reader = PyPDF2.PdfFileReader(pdf_file)
     text = ' '.join([pdf_reader.getPage(i).extract_text() for i in range(pdf_reader.numPages)])
-    pdf_file_obj.close()
     return text
 
 # Function to calculate similarity between resumes and job description
@@ -44,9 +43,9 @@ def main():
 
     if uploaded_file is not None and job_desc:
         if uploaded_file.type == 'application/pdf':
-            resume_text = extract_text_from_pdf(uploaded_file)
+            resume_text = extract_text_from_pdf(io.BytesIO(uploaded_file.getvalue()))
         elif uploaded_file.type in ['application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/msword']:
-            resume_text = extract_text_from_doc(uploaded_file)
+            resume_text = extract_text_from_doc(io.BytesIO(uploaded_file.getvalue()))
 
         # Calculate similarity
         similarities = calculate_similarity([resume_text], job_desc)
