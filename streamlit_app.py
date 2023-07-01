@@ -6,6 +6,7 @@ from sentence_transformers import SentenceTransformer
 import docx
 import pdfplumber
 import io
+from gensim.summarize import summarize
 
 # Initialize sentence transformer model for BERT embeddings
 model = SentenceTransformer('all-MiniLM-L6-v2')
@@ -21,6 +22,10 @@ def extract_text_from_pdf(pdf_file):
     with pdfplumber.open(pdf_file) as pdf:
         text = ' '.join([page.extract_text() for page in pdf.pages])
     return text
+
+# Function to summarize text
+def summarize_text(text):
+    return summarize(text)
 
 # Function to calculate similarity between resumes and job description
 def calculate_similarity(resumes, job_desc):
@@ -52,6 +57,10 @@ def main():
 
         # Display similarity
         st.write(f"Resume match score with job description: {similarities[0][0]}")
+        
+        # Summarize resume and display it
+        summary = summarize_text(resume_text)
+        st.write(f"Resume Summary: {summary}")
 
 if __name__ == "__main__":
     main()
