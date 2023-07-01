@@ -3,4 +3,5 @@ pandas
 scikit-learn
 sentence-transformers
 python-docx
-PyPDF2
+pdfplumber
+
