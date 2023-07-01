@@ -6,7 +6,7 @@ from sentence_transformers import SentenceTransformer
 import docx
 import pdfplumber
 import io
-from gensim.summarize import summarize
+from summarizer import Summarizer
 
 # Initialize sentence transformer model for BERT embeddings
 model = SentenceTransformer('all-MiniLM-L6-v2')
@@ -25,7 +25,8 @@ def extract_text_from_pdf(pdf_file):
 
 # Function to summarize text
 def summarize_text(text):
-    return summarize(text)
+    model = Summarizer()
+    return model(text, min_length=60, max_length=150)
 
 # Function to calculate similarity between resumes and job description
 def calculate_similarity(resumes, job_desc):
