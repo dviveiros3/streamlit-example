@@ -1,38 +1,58 @@
-from collections import namedtuple
-import altair as alt
-import math
-import pandas as pd
+# Import necessary libraries
 import streamlit as st
+import pandas as pd
+from sklearn.metrics.pairwise import cosine_similarity
+from sentence_transformers import SentenceTransformer
+import docx
+import PyPDF2
 
-"""
-# Welcome to Streamlit!
+# Initialize sentence transformer model for BERT embeddings
+model = SentenceTransformer('all-MiniLM-L6-v2')
 
-Edit `/streamlit_app.py` to customize this app to your heart's desire :heart:
+# Function to extract text from DOC file
+def extract_text_from_doc(doc_path):
+    doc = docx.Document(doc_path)
+    text = ' '.join([paragraph.text for paragraph in doc.paragraphs])
+    return text
 
-If you have any questions, checkout our [documentation](https://docs.streamlit.io) and [community
-forums](https://discuss.streamlit.io).
+# Function to extract text from PDF file
+def extract_text_from_pdf(pdf_path):
+    pdf_file_obj = open(pdf_path, 'rb')
+    pdf_reader = PyPDF2.PdfFileReader(pdf_file_obj)
+    text = ' '.join([pdf_reader.getPage(i).extract_text() for i in range(pdf_reader.numPages)])
+    pdf_file_obj.close()
+    return text
 
-In the meantime, below is an example of what you can do with just a few lines of code:
-"""
+# Function to calculate similarity between resumes and job description
+def calculate_similarity(resumes, job_desc):
+    # Calculate BERT embeddings
+    resume_embeddings = model.encode(resumes, convert_to_tensor=True)
+    job_desc_embedding = model.encode([job_desc], convert_to_tensor=True)
 
+    # Calculate cosine similarity between resumes and job description
+    similarities = cosine_similarity(resume_embeddings, job_desc_embedding)
 
-with st.echo(code_location='below'):
-    total_points = st.slider("Number of points in spiral", 1, 5000, 2000)
-    num_turns = st.slider("Number of turns in spiral", 1, 100, 9)
+    return similarities
 
-    Point = namedtuple('Point', 'x y')
-    data = []
+# Main application
+def main():
+    st.title('Resume Analyzer and Job Matcher')
 
-    points_per_turn = total_points / num_turns
+    # Allow user to upload resumes
+    uploaded_file = st.file_uploader("Upload Resumes", type=['doc', 'docx', 'pdf'])
+    job_desc = st.text_area("Enter Job Description")
 
-    for curr_point_num in range(total_points):
-        curr_turn, i = divmod(curr_point_num, points_per_turn)
-        angle = (curr_turn + 1) * 2 * math.pi * i / points_per_turn
-        radius = curr_point_num / total_points
-        x = radius * math.cos(angle)
-        y = radius * math.sin(angle)
-        data.append(Point(x, y))
+    if uploaded_file is not None and job_desc:
+        if uploaded_file.type == 'application/pdf':
+            resume_text = extract_text_from_pdf(uploaded_file)
+        elif uploaded_file.type in ['application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/msword']:
+            resume_text = extract_text_from_doc(uploaded_file)
 
-    st.altair_chart(alt.Chart(pd.DataFrame(data), height=500, width=500)
-        .mark_circle(color='#0068c9', opacity=0.5)
-        .encode(x='x:Q', y='y:Q'))
+        # Calculate similarity
+        similarities = calculate_similarity([resume_text], job_desc)
+
+        # Display similarity
+        st.write(f"Resume match score with job description: {similarities[0][0]}")
+
+if __name__ == "__main__":
+    main()
