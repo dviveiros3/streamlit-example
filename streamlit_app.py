@@ -4,7 +4,7 @@ import pandas as pd
 from sklearn.metrics.pairwise import cosine_similarity
 from sentence_transformers import SentenceTransformer
 import docx
-import PyPDF2
+import pdfplumber
 import io
 
 # Initialize sentence transformer model for BERT embeddings
@@ -18,8 +18,8 @@ def extract_text_from_doc(doc_file):
 
 # Function to extract text from PDF file
 def extract_text_from_pdf(pdf_file):
-    pdf_reader = PyPDF2.PdfFileReader(pdf_file)
-    text = ' '.join([pdf_reader.getPage(i).extract_text() for i in range(pdf_reader.numPages)])
+    with pdfplumber.open(pdf_file) as pdf:
+        text = ' '.join([page.extract_text() for page in pdf.pages])
     return text
 
 # Function to calculate similarity between resumes and job description
